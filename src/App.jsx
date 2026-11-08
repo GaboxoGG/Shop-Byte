@@ -13,6 +13,7 @@ import ProductDetail from "./pages/ProductDetail";
 import PublishProduct from "./pages/PublishProduct";
 import Favorites from "./pages/Favorites";
 import EditProduct from "./pages/EditProduct";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -21,12 +22,14 @@ function App() {
 
       <main className="container flex-grow-1 py-4">
         <Routes>
+          {/* Página principal */}
           <Route path="/" element={<Home />} />
 
+          {/* Autenticación */}
           <Route path="/login" element={<Login />} />
-
           <Route path="/registro" element={<Register />} />
 
+          {/* Perfil protegido */}
           <Route
             path="/perfil"
             element={
@@ -36,6 +39,7 @@ function App() {
             }
           />
 
+          {/* Publicar producto */}
           <Route
             path="/publicar"
             element={
@@ -45,11 +49,13 @@ function App() {
             }
           />
 
+          {/* Detalle del producto */}
           <Route
             path="/producto/:id"
             element={<ProductDetail />}
           />
 
+          {/* Favoritos protegidos */}
           <Route
             path="/favoritos"
             element={
@@ -59,6 +65,7 @@ function App() {
             }
           />
 
+          {/* Editar publicación propia */}
           <Route
             path="/editar-producto/:id"
             element={
@@ -67,6 +74,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Página 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
