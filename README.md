@@ -1,16 +1,89 @@
-# React + Vite
+# 🛒 Shop&Byte
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Tu próximo dispositivo tecnológico está aquí.
 
-Currently, two official plugins are available:
+Shop&Byte es un marketplace de productos tecnológicos desarrollado como proyecto académico para Desafío Latam. Su objetivo es ofrecer una plataforma donde los usuarios puedan explorar, publicar y administrar productos tecnológicos de manera sencilla e intuitiva.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Características principales
 
-## React Compiler
+- **Registro e inicio de sesión:** creación de cuentas y autenticación de usuarios.
+- **Catálogo de productos:** exploración de publicaciones disponibles.
+- **Búsqueda y filtros:** búsqueda de productos y clasificación por categorías.
+- **Detalle de productos:** visualización de información y características de cada publicación.
+- **Favoritos:** posibilidad de guardar productos favoritos por usuario.
+- **Publicaciones:** creación de publicaciones de productos tecnológicos.
+- **Edición de productos:** administración y modificación de publicaciones propias.
+- **Perfil de usuario:** visualización de información personal y publicaciones propias.
+- **Rutas protegidas:** acceso restringido a las funcionalidades privadas.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🧰 Tecnologías utilizadas
 
-## Expanding the ESLint configuration
+| Tecnología | Uso |
+|---|---|
+| React | Construcción de la interfaz de usuario. |
+| Vite | Herramienta de desarrollo y compilación. |
+| JavaScript | Lógica de la aplicación. |
+| React Router DOM | Navegación entre páginas. |
+| Bootstrap | Diseño y estilos. |
+| React Icons | Iconografía. |
+| Context API | Manejo del estado global. |
+| CSS | Personalización visual. |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📋 Requisitos previos
+
+Para ejecutar el proyecto necesitas tener instalado:
+
+- [Node.js](https://nodejs.org/)
+- npm (incluido con Node.js).
+- Git.
+
+## ⚙️ Instalación
+
+**1. Clonar el repositorio**
+
+```bash
+git clone https://github.com/GaboxoGG/Shop-Byte.git
+```
+
+**2. Ingresar a la carpeta del proyecto**
+
+```bash
+cd Shop-Byte
+```
+
+**3. Instalar las dependencias**
+
+```bash
+npm install
+```
+
+**4. Iniciar el servidor de desarrollo**
+
+```bash
+npm run dev
+```
+
+**5. Abrir la aplicación**
+
+Vite indicará la dirección local para acceder a Shop&Byte. Generalmente es:
+
+```text
+http://localhost:5173
+```
+
+## 📦 Scripts disponibles
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Inicia el servidor de desarrollo. |
+| `npm run build` | Genera la versión de producción. |
+| `npm run lint` | Analiza el código mediante ESLint. |
+| `npm run preview` | Permite previsualizar la versión de producción. |
+
+## 📁 Estructura del proyecto
+
+```text
+shop-byte-frontend/
+├── public/
+├── src/
+│   ├── assets
