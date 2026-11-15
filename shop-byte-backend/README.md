@@ -1,9 +1,8 @@
-
 # Shop&Byte - Backend
 
 Backend del proyecto **Shop&Byte**, un marketplace desarrollado con Node.js, Express y PostgreSQL.
 
-Este proyecto permite gestionar usuarios, autenticación mediante JWT y publicación, consulta, actualización y eliminación de productos.
+Permite gestionar usuarios, autenticar mediante JWT y publicar, consultar, actualizar y eliminar productos.
 
 ## Tecnologías utilizadas
 
@@ -29,11 +28,16 @@ Antes de ejecutar el proyecto, debes tener instalado:
 
 ## Instalación
 
-Clona el repositorio y entra en la carpeta del proyecto:
+Clona el repositorio:
 
 ```bash
-git clone URL_DEL_REPOSITORIO
-cd shop-byte-backend
+git clone https://github.com/GaboxoGG/Shop-Byte.git
+```
+
+Ingresa a la carpeta del backend:
+
+```bash
+cd Shop-Byte/shop-byte-backend
 ```
 
 Instala las dependencias:
@@ -44,7 +48,7 @@ npm install
 
 ## Variables de entorno
 
-Crea un archivo `.env` en la raíz del proyecto:
+Crea un archivo `.env` en la raíz de `shop-byte-backend` con las siguientes variables:
 
 ```env
 PORT=3000
@@ -60,34 +64,38 @@ JWT_SECRET=TU_CLAVE_SECRETA
 
 Reemplaza los valores de ejemplo por tus propias credenciales.
 
-**Importante:** El archivo `.env` no debe subirse a GitHub.
+**Importante:** el archivo `.env` contiene información privada y no debe subirse a GitHub.
 
 ## Base de datos
 
-El proyecto utiliza PostgreSQL y contiene las siguientes tablas:
+El proyecto utiliza PostgreSQL y contiene dos tablas:
 
-### users
+### Usuarios (`users`)
 
-- id
-- name
-- email
-- password
-- created_at
+| Campo | Descripción |
+|---|---|
+| id | Identificador del usuario |
+| name | Nombre |
+| email | Correo electrónico |
+| password | Contraseña cifrada |
+| created_at | Fecha de creación |
 
-### products
+### Productos (`products`)
 
-- id
-- name
-- description
-- price
-- category
-- image
-- condition
-- stock
-- user_id
-- created_at
+| Campo | Descripción |
+|---|---|
+| id | Identificador del producto |
+| name | Nombre |
+| description | Descripción |
+| price | Precio |
+| category | Categoría |
+| image | Imagen del producto |
+| condition | Estado del producto |
+| stock | Cantidad disponible |
+| user_id | Identificador del usuario propietario |
+| created_at | Fecha de creación |
 
-La tabla `products` tiene una relación con `users` mediante la clave foránea `user_id`.
+La tabla `products` tiene una clave foránea `user_id` que referencia a `users(id)`.
 
 ## Ejecución del proyecto
 
@@ -130,28 +138,4 @@ http://localhost:3000
 | GET | `/api/products` | Listar productos |
 | GET | `/api/products/:id` | Consultar un producto |
 | POST | `/api/products` | Crear un producto |
-| PUT | `/api/products/:id` | Actualizar un producto propio |
-| DELETE | `/api/products/:id` | Eliminar un producto propio |
-
-Las operaciones de creación, actualización y eliminación requieren autenticación mediante JWT y verifican la propiedad del producto.
-
-## Pruebas automatizadas
-
-El proyecto utiliza Jest y Supertest para ejecutar pruebas automatizadas de la API.
-
-Para ejecutar las pruebas:
-
-```bash
-npm test
-```
-
-Actualmente se incluyen pruebas para:
-
-- GET `/`
-- GET `/api/test-db`
-- GET `/api/products`
-- GET `/api/products/1`
-
-## Autor
-
-Proyecto académico Shop&Byte - Hito 3.
+| PUT | `/api/products/:id` | Actualizar
