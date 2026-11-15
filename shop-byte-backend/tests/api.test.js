@@ -75,4 +75,37 @@ describe("Pruebas de la API Shop&Byte", () => {
     expect(response.body.id).toBe(1);
     expect(response.body.name).toBe("Notebook Lenovo");
   });
+
+  // Prueba 5: Producto inexistente
+  test("GET /api/products/999 debe responder 404", async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [],
+    });
+
+    const response = await request(app).get("/api/products/999");
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body.message).toBe("Producto no encontrado");
+  });
+
+  // Prueba 6: Error al consultar productos
+  test("GET /api/products debe responder 500 si falla la base de datos", async () => {
+    pool.query.mockRejectedValueOnce(
+      new Error("Error de conexión")
+    );
+
+    const response = await request(app).get("/api/products");
+
+    expect(response.statusCode).toBe(500);
+  });
+
+  // Prueba 7: Acceso sin token
+  test("GET /api/products/private debe responder 401 sin token", async () => {
+    const response = await request(app).get("/api/products/private");
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body.message).toBe(
+      "Token de autenticación requerido"
+    );
+  });
 });
