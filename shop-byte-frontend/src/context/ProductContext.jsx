@@ -48,7 +48,10 @@ export function ProductProvider({ children }) {
         ).map(formatProduct);
 
         if (active) {
-          setProducts([...serverProducts, ...productsData]);
+          setProducts([
+            ...serverProducts,
+            ...productsData,
+          ]);
         }
       } catch (error) {
         if (active) {
@@ -255,20 +258,11 @@ export function ProductProvider({ children }) {
         }
       );
 
-      // Actualizar el catálogo después de confirmar el borrado.
       setProducts((previousProducts) =>
         previousProducts.filter(
           (product) => String(product.id) !== String(productId)
         )
       );
-
-      // Quitar el producto eliminado de los favoritos del usuario.
-      setFavoritesByUser((previousFavorites) => ({
-        ...previousFavorites,
-        [userKey]: (previousFavorites[userKey] || []).filter(
-          (id) => String(id) !== String(productId)
-        ),
-      }));
 
       return {
         success: true,
