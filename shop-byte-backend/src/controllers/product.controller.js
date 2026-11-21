@@ -5,16 +5,29 @@ const pool = require("../config/db");
 const getProducts = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, name, description, price, category,
-             image, condition, stock, user_id, created_at
-      FROM products
-      ORDER BY created_at DESC
+      SELECT
+        p.id,
+        p.name,
+        p.description,
+        p.price,
+        p.category,
+        p.image,
+        p.condition,
+        p.stock,
+        p.user_id,
+        p.created_at,
+        u.name AS seller
+      FROM products p
+      LEFT JOIN users u ON u.id = p.user_id
+      ORDER BY p.created_at DESC
     `);
 
     res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error al listar productos:", error.message);
-    res.status(500).json({ message: "Error al obtener productos" });
+    res.status(500).json({
+      message: "Error al obtener productos",
+    });
   }
 };
 
@@ -24,7 +37,12 @@ const getProductById = async (req, res) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      "SELECT * FROM products WHERE id = $1",
+      `SELECT
+         p.*,
+         u.name AS seller
+       FROM products p
+       LEFT JOIN users u ON u.id = p.user_id
+       WHERE p.id = $1`,
       [id]
     );
 
@@ -37,7 +55,9 @@ const getProductById = async (req, res) => {
     res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error("Error al obtener producto:", error.message);
-    res.status(500).json({ message: "Error al obtener producto" });
+    res.status(500).json({
+      message: "Error al obtener producto",
+    });
   }
 };
 
@@ -83,13 +103,25 @@ const createProduct = async (req, res) => {
       ]
     );
 
+    const productResult = await pool.query(
+      `SELECT
+         p.*,
+         u.name AS seller
+       FROM products p
+       LEFT JOIN users u ON u.id = p.user_id
+       WHERE p.id = $1`,
+      [result.rows[0].id]
+    );
+
     res.status(201).json({
       message: "Producto publicado correctamente",
-      product: result.rows[0],
+      product: productResult.rows[0],
     });
   } catch (error) {
     console.error("Error al crear producto:", error.message);
-    res.status(500).json({ message: "Error al crear producto" });
+    res.status(500).json({
+      message: "Error al crear producto",
+    });
   }
 };
 
@@ -97,6 +129,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
+
     const {
       name,
       description,
@@ -117,7 +150,7 @@ const updateProduct = async (req, res) => {
            condition = COALESCE($6, condition),
            stock = COALESCE($7, stock)
        WHERE id = $8 AND user_id = $9
-       RETURNING *`,
+       RETURNING id`,
       [
         name ?? null,
         description ?? null,
@@ -148,13 +181,25 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    const productResult = await pool.query(
+      `SELECT
+         p.*,
+         u.name AS seller
+       FROM products p
+       LEFT JOIN users u ON u.id = p.user_id
+       WHERE p.id = $1`,
+      [id]
+    );
+
     res.status(200).json({
       message: "Producto actualizado correctamente",
-      product: result.rows[0],
+      product: productResult.rows[0],
     });
   } catch (error) {
     console.error("Error al actualizar producto:", error.message);
-    res.status(500).json({ message: "Error al actualizar producto" });
+    res.status(500).json({
+      message: "Error al actualizar producto",
+    });
   }
 };
 
@@ -192,7 +237,9 @@ const deleteProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al eliminar producto:", error.message);
-    res.status(500).json({ message: "Error al eliminar producto" });
+    res.status(500).json({
+      message: "Error al eliminar producto",
+    });
   }
 };
 

@@ -16,7 +16,7 @@ import { useAuth } from "../context/AuthContext";
 
 function PublishProduct() {
   const { addProduct } = useProducts();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -30,6 +30,7 @@ function PublishProduct() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const categories = [
     "Notebooks",
@@ -52,7 +53,7 @@ function PublishProduct() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
@@ -60,33 +61,48 @@ function PublishProduct() {
       return;
     }
 
-    if (Object.values(formData).some((value) => !String(value).trim())) {
+    if (Object.values(formData).some(
+      (value) => !String(value).trim()
+    )) {
       setError("Completa todos los campos.");
       return;
     }
 
-    if (Number(formData.price) <= 0) {
+    if (!Number.isFinite(Number(formData.price)) ||
+        Number(formData.price) <= 0) {
       setError("El precio debe ser mayor que cero.");
       return;
     }
 
-    if (!Number.isInteger(Number(formData.stock)) || Number(formData.stock) < 1) {
+    if (
+      !Number.isInteger(Number(formData.stock)) ||
+      Number(formData.stock) < 1
+    ) {
       setError("El stock debe ser un número entero mayor que cero.");
       return;
     }
 
-    const newProduct = addProduct({
+    setLoading(true);
+    setError("");
+
+    const result = await addProduct({
       name: formData.name.trim(),
       price: Number(formData.price),
       category: formData.category,
       image: formData.image.trim(),
       description: formData.description.trim(),
-      seller: user.name,
       condition: formData.condition,
       stock: Number(formData.stock),
     });
 
-    navigate(`/producto/${newProduct.id}`);
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.message);
+      return;
+    }
+
+    navigate(`/producto/${result.product.id}`);
   };
 
   if (!isAuthenticated) {
@@ -95,7 +111,10 @@ function PublishProduct() {
         <div className="register-card text-center">
           <h1>Inicia sesión</h1>
           <p>Necesitas una cuenta para publicar productos.</p>
-          <Link to="/login" className="register-submit d-block text-decoration-none">
+          <Link
+            to="/login"
+            className="register-submit d-block text-decoration-none"
+          >
             Iniciar sesión
           </Link>
         </div>
@@ -114,7 +133,9 @@ function PublishProduct() {
 
           <h1>Publicar producto</h1>
 
-          <p>Completa los datos para publicar tu producto en Shop&Byte.</p>
+          <p>
+            Completa los datos para publicar tu producto en Shop&Byte.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -238,9 +259,13 @@ function PublishProduct() {
             </div>
           )}
 
-          <button type="submit" className="register-submit">
+          <button
+            type="submit"
+            className="register-submit"
+            disabled={loading}
+          >
             <FiPlusSquare />
-            Publicar producto
+            {loading ? "Publicando..." : "Publicar producto"}
           </button>
 
         </form>

@@ -19,7 +19,7 @@ function EditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { products, updateProduct } = useProducts();
+  const { products, updateProduct, loading } = useProducts();
   const { user } = useAuth();
 
   const product = products.find(
@@ -42,6 +42,7 @@ function EditProduct() {
   }));
 
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const categories = [
     "Notebooks",
@@ -52,6 +53,14 @@ function EditProduct() {
     "Accesorios",
     "Otros",
   ];
+
+  if (loading && !product) {
+    return (
+      <div className="text-center py-5">
+        <p>Cargando publicación...</p>
+      </div>
+    );
+  }
 
   if (!product || !product.isCustom) {
     return (
@@ -92,7 +101,7 @@ function EditProduct() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (
@@ -104,7 +113,10 @@ function EditProduct() {
       return;
     }
 
-    if (Number(formData.price) <= 0) {
+    if (
+      !Number.isFinite(Number(formData.price)) ||
+      Number(formData.price) <= 0
+    ) {
       setError("El precio debe ser mayor que cero.");
       return;
     }
@@ -117,7 +129,10 @@ function EditProduct() {
       return;
     }
 
-    const result = updateProduct(product.id, {
+    setSaving(true);
+    setError("");
+
+    const result = await updateProduct(product.id, {
       name: formData.name.trim(),
       price: Number(formData.price),
       category: formData.category,
@@ -126,6 +141,8 @@ function EditProduct() {
       condition: formData.condition,
       stock: Number(formData.stock),
     });
+
+    setSaving(false);
 
     if (!result.success) {
       setError(result.message);
@@ -271,9 +288,13 @@ function EditProduct() {
             </div>
           )}
 
-          <button type="submit" className="register-submit">
+          <button
+            type="submit"
+            className="register-submit"
+            disabled={saving}
+          >
             <FiSave />
-            Guardar cambios
+            {saving ? "Guardando..." : "Guardar cambios"}
           </button>
         </form>
       </div>

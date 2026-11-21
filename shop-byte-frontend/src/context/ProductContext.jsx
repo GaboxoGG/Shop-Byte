@@ -8,55 +8,71 @@ import {
 
 import productsData from "../data/products";
 import { useAuth } from "./AuthContext";
+import { apiRequest } from "../services/api";
 
 const ProductContext = createContext(null);
+
+// Adaptar los productos de PostgreSQL al formato de Shop&Byte.
+const formatProduct = (product) => ({
+  ...product,
+  id: `db-${product.id}`,
+  backendId: product.id,
+  ownerId: product.user_id,
+  seller: product.seller || "Vendedor",
+  image: product.image || "",
+  price: Number(product.price),
+  stock: Number(product.stock),
+  isCustom: true,
+});
 
 export function ProductProvider({ children }) {
   const { user } = useAuth();
 
-  const [products, setProducts] = useState(() => {
-    try {
-      const savedProducts = localStorage.getItem("shopbyte-products");
-      const customProducts = savedProducts
-        ? JSON.parse(savedProducts)
-        : [];
+  const [products, setProducts] = useState(productsData);
+  const [loading, setLoading] = useState(true);
+  const [productError, setProductError] = useState("");
 
-      // Recuperar usuarios registrados para asociar
-      // publicaciones antiguas con sus propietarios.
-      const savedUsers = JSON.parse(
-        localStorage.getItem("shopbyte-users") || "[]"
-      );
+  // Recuperar productos desde PostgreSQL.
+  useEffect(() => {
+    let active = true;
 
-      const migratedProducts = customProducts.map((product) => {
-        if (product.ownerId) return product;
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setProductError("");
 
-        const owner = savedUsers.find((savedUser) => {
-          const fullName = [
-            savedUser.name,
-            savedUser.lastname,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .trim();
+        const data = await apiRequest("/api/products");
 
-          return (
-            fullName.toLowerCase() ===
-            String(product.seller || "").trim().toLowerCase()
-          );
-        });
+        const serverProducts = (
+          Array.isArray(data) ? data : data.products || []
+        ).map(formatProduct);
 
-        return owner
-          ? { ...product, ownerId: owner.id }
-          : product;
-      });
+        if (active) {
+          setProducts([
+            ...serverProducts,
+            ...productsData,
+          ]);
+        }
+      } catch (error) {
+        if (active) {
+          setProductError(error.message);
+          setProducts(productsData);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
 
-      return [...productsData, ...migratedProducts];
-    } catch {
-      return [...productsData];
-    }
-  });
+    fetchProducts();
 
-  // Favoritos separados por usuario
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Favoritos separados por usuario.
   const [favoritesByUser, setFavoritesByUser] = useState(() => {
     try {
       const savedFavorites = localStorage.getItem(
@@ -75,7 +91,7 @@ export function ProductProvider({ children }) {
     ? favoritesByUser[userKey] || []
     : [];
 
-  // Publicaciones del usuario actual
+  // Publicaciones del usuario actual.
   const myProducts = userKey
     ? products.filter(
         (product) =>
@@ -84,19 +100,7 @@ export function ProductProvider({ children }) {
       )
     : [];
 
-  // Guardar productos publicados y editados
-  useEffect(() => {
-    const customProducts = products.filter(
-      (product) => product.isCustom
-    );
-
-    localStorage.setItem(
-      "shopbyte-products",
-      JSON.stringify(customProducts)
-    );
-  }, [products]);
-
-  // Guardar favoritos de todas las cuentas
+  // Guardar favoritos de todas las cuentas.
   useEffect(() => {
     localStorage.setItem(
       "shopbyte-favorites-by-user",
@@ -104,28 +108,54 @@ export function ProductProvider({ children }) {
     );
   }, [favoritesByUser]);
 
-  // Agregar un producto
-  const addProduct = (product) => {
-    if (!user) return null;
+  // Publicar un producto en PostgreSQL.
+  const addProduct = async (product) => {
+    if (!user) {
+      return {
+        success: false,
+        message: "Debes iniciar sesión.",
+      };
+    }
 
-    const newProduct = {
-      ...product,
-      id: `custom-${Date.now()}`,
-      ownerId: user.id,
-      seller: `${user.name || ""} ${user.lastname || ""}`.trim() || user.name,
-      isCustom: true,
-    };
+    try {
+      const data = await apiRequest("/api/products", {
+        method: "POST",
+        body: JSON.stringify({
+          name: product.name,
+          price: Number(product.price),
+          category: product.category,
+          image: product.image,
+          description: product.description,
+          condition: product.condition,
+          stock: Number(product.stock),
+        }),
+      });
 
-    setProducts((previousProducts) => [
-      newProduct,
-      ...previousProducts,
-    ]);
+      const savedProduct = formatProduct(
+        data.product || data
+      );
 
-    return newProduct;
+      setProducts((previousProducts) => [
+        savedProduct,
+        ...previousProducts,
+      ]);
+
+      return {
+        success: true,
+        product: savedProduct,
+        message:
+          data.message || "Producto publicado correctamente.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   };
 
-  // Editar una publicación propia
-  const updateProduct = (productId, updatedData) => {
+  // Editar una publicación propia en PostgreSQL.
+  const updateProduct = async (productId, updatedData) => {
     if (!userKey) {
       return {
         success: false,
@@ -134,7 +164,7 @@ export function ProductProvider({ children }) {
     }
 
     const productToEdit = products.find(
-      (product) => product.id === productId
+      (product) => String(product.id) === String(productId)
     );
 
     if (!productToEdit || !productToEdit.isCustom) {
@@ -151,34 +181,71 @@ export function ProductProvider({ children }) {
       };
     }
 
-    setProducts((previousProducts) =>
-      previousProducts.map((product) =>
-        product.id === productId
-          ? { ...product, ...updatedData }
-          : product
-      )
-    );
+    try {
+      const data = await apiRequest(
+        `/api/products/${productToEdit.backendId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            name: updatedData.name,
+            price: Number(updatedData.price),
+            category: updatedData.category,
+            image: updatedData.image,
+            description: updatedData.description,
+            condition: updatedData.condition,
+            stock: Number(updatedData.stock),
+          }),
+        }
+      );
 
-    return {
-      success: true,
-      message: "Publicación actualizada correctamente.",
-    };
+      const updatedProduct = formatProduct(
+        data.product || data
+      );
+
+      setProducts((previousProducts) =>
+        previousProducts.map((product) =>
+          String(product.id) === String(productId)
+            ? updatedProduct
+            : product
+        )
+      );
+
+      return {
+        success: true,
+        message:
+          data.message || "Publicación actualizada correctamente.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   };
 
-  // Comprobar si un producto es favorito
+  // Comprobar si un producto es favorito.
   const isFavorite = (productId) => {
-    return favorites.includes(productId);
+    return favorites.some(
+      (id) => String(id) === String(productId)
+    );
   };
 
-  // Agregar o quitar favoritos
+  // Agregar o quitar favoritos.
   const toggleFavorite = (productId) => {
     if (!userKey) return;
 
     setFavoritesByUser((previousFavorites) => {
-      const currentFavorites = previousFavorites[userKey] || [];
+      const currentFavorites =
+        previousFavorites[userKey] || [];
 
-      const updatedFavorites = currentFavorites.includes(productId)
-        ? currentFavorites.filter((id) => id !== productId)
+      const exists = currentFavorites.some(
+        (id) => String(id) === String(productId)
+      );
+
+      const updatedFavorites = exists
+        ? currentFavorites.filter(
+            (id) => String(id) !== String(productId)
+          )
         : [...currentFavorites, productId];
 
       return {
@@ -188,15 +255,17 @@ export function ProductProvider({ children }) {
     });
   };
 
-  // Obtener productos favoritos
+  // Obtener productos favoritos.
   const favoriteProducts = products.filter((product) =>
-    favorites.includes(product.id)
+    isFavorite(product.id)
   );
 
   return (
     <ProductContext.Provider
       value={{
         products,
+        loading,
+        productError,
         favorites,
         favoriteProducts,
         myProducts,

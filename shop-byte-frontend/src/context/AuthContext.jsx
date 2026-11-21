@@ -6,10 +6,12 @@ import {
   useState,
 } from "react";
 
+import { apiRequest } from "../services/api";
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // Recuperar usuario y sesión guardados
+  // Recuperar usuario guardado
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("shopbyte-user");
@@ -19,85 +21,61 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // Guardar o eliminar sesión
+  // Mantener usuario en localStorage
   useEffect(() => {
     if (user) {
-      localStorage.setItem(
-        "shopbyte-user",
-        JSON.stringify(user)
-      );
+      localStorage.setItem("shopbyte-user", JSON.stringify(user));
     } else {
       localStorage.removeItem("shopbyte-user");
     }
   }, [user]);
 
-  // Registrar usuario
-  const register = ({ name, email, password }) => {
-    const savedUsers = JSON.parse(
-      localStorage.getItem("shopbyte-users") || "[]"
-    );
+  // Registrar usuario en el backend
+  const register = async ({ name, email, password }) => {
+    try {
+      const data = await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    const existingUser = savedUsers.find(
-      (item) => item.email === email
-    );
-
-    if (existingUser) {
+      return {
+        success: true,
+        message: data.message || "Cuenta creada correctamente.",
+      };
+    } catch (error) {
       return {
         success: false,
-        message: "Este correo ya está registrado.",
+        message: error.message,
       };
     }
-
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      password,
-    };
-
-    localStorage.setItem(
-      "shopbyte-users",
-      JSON.stringify([...savedUsers, newUser])
-    );
-
-    return {
-      success: true,
-      message: "Cuenta creada correctamente.",
-    };
   };
 
-  // Iniciar sesión
-  const login = (email, password) => {
-    const savedUsers = JSON.parse(
-      localStorage.getItem("shopbyte-users") || "[]"
-    );
+  // Iniciar sesión mediante JWT
+  const login = async (email, password) => {
+    try {
+      const data = await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
 
-    const foundUser = savedUsers.find(
-      (item) =>
-        item.email === email &&
-        item.password === password
-    );
+      localStorage.setItem("shopbyte-token", data.token);
+      setUser(data.user);
 
-    if (!foundUser) {
+      return {
+        success: true,
+        message: data.message || "Bienvenido a Shop&Byte.",
+      };
+    } catch (error) {
       return {
         success: false,
-        message: "Correo o contraseña incorrectos.",
+        message: error.message,
       };
     }
-
-    const userData = { ...foundUser };
-    delete userData.password;
-
-    setUser(userData);
-
-    return {
-      success: true,
-      message: "Bienvenido a Shop&Byte.",
-    };
   };
 
   // Cerrar sesión
   const logout = () => {
+    localStorage.removeItem("shopbyte-token");
     setUser(null);
   };
 

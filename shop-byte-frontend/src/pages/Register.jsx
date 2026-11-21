@@ -1,7 +1,12 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiUser, FiMail, FiLock, FiUserPlus } from "react-icons/fi";
+import {
+  FiUser,
+  FiMail,
+  FiLock,
+  FiUserPlus,
+} from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 function Register() {
@@ -16,6 +21,7 @@ function Register() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,7 +35,7 @@ function Register() {
     setSuccess("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (Object.values(formData).some((value) => !value.trim())) {
@@ -37,7 +43,7 @@ function Register() {
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError("Ingresa un correo electrónico válido.");
       return;
     }
@@ -52,31 +58,38 @@ function Register() {
       return;
     }
 
-    const result = register({
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
-      password: formData.password,
-    });
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
-    if (!result.success) {
-      setError(result.message);
-      return;
+    try {
+      const result = await register({
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
+
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+
+      setSuccess(result.message + " Ya puedes iniciar sesión.");
+
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(result.message);
-
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
   };
 
   return (
     <div className="register-page">
       <div className="register-card">
-
         <div className="register-header">
           <div className="register-icon">
             <FiUserPlus />
@@ -90,7 +103,6 @@ function Register() {
         </div>
 
         <form onSubmit={handleSubmit}>
-
           <div className="register-field">
             <label htmlFor="name">Nombre completo</label>
 
@@ -169,22 +181,24 @@ function Register() {
 
           {success && (
             <div className="register-message success">
-              {success} Ya puedes iniciar sesión.
+              {success}
             </div>
           )}
 
-          <button type="submit" className="register-submit">
+          <button
+            type="submit"
+            className="register-submit"
+            disabled={loading}
+          >
             <FiUserPlus />
-            Crear cuenta
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
           </button>
-
         </form>
 
         <div className="register-footer">
           ¿Ya tienes una cuenta?{" "}
           <Link to="/login">Inicia sesión</Link>
         </div>
-
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ function Login() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,7 +38,7 @@ function Login() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.email.trim() || !formData.password.trim()) {
@@ -45,32 +46,38 @@ function Login() {
       return;
     }
 
-    const result = login(
-      formData.email.trim().toLowerCase(),
-      formData.password
-    );
+    setLoading(true);
+    setError("");
 
-    if (!result.success) {
-      setError(result.message);
-      return;
+    try {
+      const result = await login(
+        formData.email.trim().toLowerCase(),
+        formData.password
+      );
+
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+
+      // Recuperar la página y la acción pendientes
+      const from = location.state?.from || "/perfil";
+      const favoriteProductId = location.state?.favoriteProductId;
+
+      navigate(from, {
+        replace: true,
+        state: favoriteProductId
+          ? { favoriteProductId }
+          : null,
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // Recuperar la página y la acción pendientes
-    const from = location.state?.from || "/perfil";
-    const favoriteProductId = location.state?.favoriteProductId;
-
-    navigate(from, {
-      replace: true,
-      state: favoriteProductId
-        ? { favoriteProductId }
-        : null,
-    });
   };
 
   return (
     <div className="register-page">
       <div className="register-card">
-
         <div className="register-header">
           <div className="register-icon">
             <FiLogIn />
@@ -84,7 +91,6 @@ function Login() {
         </div>
 
         <form onSubmit={handleSubmit}>
-
           <div className="register-field">
             <label htmlFor="email">
               Correo electrónico
@@ -132,18 +138,17 @@ function Login() {
           <button
             type="submit"
             className="register-submit"
+            disabled={loading}
           >
             <FiLogIn />
-            Iniciar sesión
+            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
-
         </form>
 
         <div className="register-footer">
           ¿Todavía no tienes una cuenta?{" "}
           <Link to="/registro">Crear cuenta</Link>
         </div>
-
       </div>
     </div>
   );
