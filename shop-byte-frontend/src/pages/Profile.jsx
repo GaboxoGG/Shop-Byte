@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FiUser,
@@ -8,6 +9,7 @@ import {
   FiHeart,
   FiEdit2,
   FiPackage,
+  FiTrash2,
 } from "react-icons/fi";
 
 import { useAuth } from "../context/AuthContext";
@@ -15,12 +17,31 @@ import { useProducts } from "../context/ProductContext";
 
 function Profile() {
   const { user, logout } = useAuth();
-  const { myProducts } = useProducts();
+  const { myProducts, deleteProduct } = useProducts();
   const navigate = useNavigate();
+
+  const [deletingId, setDeletingId] = useState(null);
+  const [message, setMessage] = useState("");
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleDelete = async (product) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar "${product.name}"? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingId(product.id);
+    setMessage("");
+
+    const result = await deleteProduct(product.id);
+
+    setMessage(result.message);
+    setDeletingId(null);
   };
 
   const formatPrice = (price) =>
@@ -78,7 +99,6 @@ function Profile() {
 
         {/* Información del usuario */}
         <div className="profile-info">
-
           <div className="profile-info-item">
             <FiUser />
 
@@ -100,7 +120,6 @@ function Profile() {
               <strong>{user.email}</strong>
             </div>
           </div>
-
         </div>
 
         {/* Acciones del perfil */}
@@ -132,11 +151,19 @@ function Profile() {
             </span>
           </div>
 
+          {message && (
+            <div className="alert alert-info" role="status">
+              {message}
+            </div>
+          )}
+
           {myProducts.length === 0 ? (
             <div className="text-center py-4 border rounded-3">
               <FiPackage size={32} className="text-secondary mb-2" />
 
-              <h3 className="h6">Todavía no tienes publicaciones</h3>
+              <h3 className="h6">
+                Todavía no tienes publicaciones
+              </h3>
 
               <p className="text-secondary small mb-3">
                 Publica tu primer producto en Shop&Byte.
@@ -154,7 +181,7 @@ function Profile() {
                   key={product.id}
                   className="border rounded-3 p-3"
                 >
-                  <div className="d-flex align-items-center gap-3">
+                  <div className="d-flex align-items-center gap-3 flex-wrap">
 
                     <img
                       src={product.image}
@@ -185,17 +212,35 @@ function Profile() {
                       </div>
                     </div>
 
-                    <Link
-                      to={`/editar-producto/${product.id}`}
-                      className="btn btn-outline-primary"
-                      aria-label={`Editar ${product.name}`}
-                      title="Editar publicación"
-                    >
-                      <FiEdit2 />
-                      <span className="ms-1 d-none d-sm-inline">
-                        Editar
-                      </span>
-                    </Link>
+                    <div className="d-flex gap-2">
+                      <Link
+                        to={`/editar-producto/${product.id}`}
+                        className="btn btn-outline-primary"
+                        aria-label={`Editar ${product.name}`}
+                        title="Editar publicación"
+                      >
+                        <FiEdit2 />
+                        <span className="ms-1 d-none d-sm-inline">
+                          Editar
+                        </span>
+                      </Link>
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger"
+                        onClick={() => handleDelete(product)}
+                        disabled={deletingId === product.id}
+                        aria-label={`Eliminar ${product.name}`}
+                        title="Eliminar publicación"
+                      >
+                        <FiTrash2 />
+                        <span className="ms-1 d-none d-sm-inline">
+                          {deletingId === product.id
+                            ? "Eliminando..."
+                            : "Eliminar"}
+                        </span>
+                      </button>
+                    </div>
 
                   </div>
                 </div>

@@ -48,10 +48,7 @@ export function ProductProvider({ children }) {
         ).map(formatProduct);
 
         if (active) {
-          setProducts([
-            ...serverProducts,
-            ...productsData,
-          ]);
+          setProducts([...serverProducts, ...productsData]);
         }
       } catch (error) {
         if (active) {
@@ -223,6 +220,69 @@ export function ProductProvider({ children }) {
     }
   };
 
+  // Eliminar una publicación propia de PostgreSQL.
+  const deleteProduct = async (productId) => {
+    if (!userKey) {
+      return {
+        success: false,
+        message: "Debes iniciar sesión.",
+      };
+    }
+
+    const productToDelete = products.find(
+      (product) => String(product.id) === String(productId)
+    );
+
+    if (!productToDelete || !productToDelete.isCustom) {
+      return {
+        success: false,
+        message: "No se encontró la publicación.",
+      };
+    }
+
+    if (String(productToDelete.ownerId) !== userKey) {
+      return {
+        success: false,
+        message: "No tienes permiso para eliminar esta publicación.",
+      };
+    }
+
+    try {
+      const data = await apiRequest(
+        `/api/products/${productToDelete.backendId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      // Actualizar el catálogo después de confirmar el borrado.
+      setProducts((previousProducts) =>
+        previousProducts.filter(
+          (product) => String(product.id) !== String(productId)
+        )
+      );
+
+      // Quitar el producto eliminado de los favoritos del usuario.
+      setFavoritesByUser((previousFavorites) => ({
+        ...previousFavorites,
+        [userKey]: (previousFavorites[userKey] || []).filter(
+          (id) => String(id) !== String(productId)
+        ),
+      }));
+
+      return {
+        success: true,
+        message:
+          data.message || "Publicación eliminada correctamente.",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
   // Comprobar si un producto es favorito.
   const isFavorite = (productId) => {
     return favorites.some(
@@ -273,6 +333,7 @@ export function ProductProvider({ children }) {
         toggleFavorite,
         addProduct,
         updateProduct,
+        deleteProduct,
       }}
     >
       {children}
